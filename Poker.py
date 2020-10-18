@@ -5,20 +5,20 @@ from os import system
 def ranks(): return ["2","3","4","5","6","7","8","9","T","J","Q","K","A"]
 def suits(): return ["♠","♣","♥","♦"]
 def ids(): return [1,2,3,4]
-def powers(): return [2,3,4,5,6,7,8,9,10,11,12,13,14]
+def values(): return [2,3,4,5,6,7,8,9,10,11,12,13,14]
 
 class card:
 
-	def __init__(self, rank, suit, power, id):
+	def __init__(self, rank, suit, value, id):
 		self.rank = rank
 		self.suit = suit
-		self.power = power
+		self.value = value
 		self.id = id
 
 	def print_a_card(self):
 		print(self.rank + self.suit, end = " ")
 
-deck=[card(rank,suit,power,id)  for power, rank in zip(powers(),ranks()) for suit,id in zip(suits(),ids())]
+deck=[card(rank,suit,value,id)  for value, rank in zip(values(),ranks()) for suit,id in zip(suits(),ids())]
 
 
 def shuffle_cards():
@@ -160,6 +160,162 @@ class computer_player (player):
 	def c_last_check(self, difference = 0):
 		b = self.c_decision(difference = difference)
 		return b
+
+####
+####    card.id = suits (from 1 to 4)
+####    card.value = ranks (from 2 to 14)
+####
+
+def is_pair(all_cards = [card, card, card, card, card, card, card]):
+	all_cards.sort(key = lambda card: card.value)
+	all_cards.reverse()
+	kicks = [0, 0, 0, 0, 0]
+	i = 0
+	while i < 6:
+		if all_cards[i].value == all_cards[i+1].value:
+			pair = [all_cards[i], all_cards[i+1]]
+			left = [j for j in all_cards if j not in pair]
+			left.sort(key = lambda card: card.value)
+			left.reverse()
+			kicks = [all_cards[i].value, all_cards[i].value, left[0].value, left[1].value, left[2].value]
+			return True, kicks
+		i+=1
+	return False, kicks
+
+def is_pair_5(all_cards = [card, card, card, card, card]):
+	all_cards.sort(key = lambda card: card.value)
+	all_cards.reverse()
+	i = 0
+	while i < 4:
+		if all_cards[i].value == all_cards[i+1].value:
+			return True, all_cards[i].value
+		i+=1
+	return False, 0
+
+def is_pair_4(all_cards = [card, card, card, card]):
+	all_cards.sort(key = lambda card: card.value)
+	all_cards.reverse()
+	i = 0
+	while i < 3:
+		if all_cards[i].value == all_cards[i+1].value:
+			return True, all_cards[i].value
+		i+=1
+	return False, 0
+
+def is_2pair(all_cards = [card, card, card, card, card, card, card]):
+	all_cards.sort(key = lambda card: card.value)
+	all_cards.reverse()
+	kicks = [0,0,0,0,0]
+	p1, v1 = False, 0
+	p2, v2 = False, 0
+
+	p1, v1 = is_pair(all_cards)
+	if not p1:
+		return False, kicks
+	else:
+		for i in all_cards:
+			if i.value == v1[0] and len(all_cards) > 5:
+				all_cards.remove(i)
+		p2, v2 = is_pair_5(all_cards)
+		for i in all_cards:
+			if i.value == v2 and len(all_cards) > 3:
+				all_cards.remove(i)
+		if p2:
+			kicks = [v1[0], v1[0], v2, v2, max(all_cards[0].value, all_cards[1].value, all_cards[2].value)]
+			return True, kicks
+	return False, kicks
+
+
+def is_3kind(all_cards = [card, card, card, card, card, card, card]):
+	all_cards.sort(key = lambda card: card.value)
+	all_cards.reverse()
+	kicks = [0, 0, 0, 0, 0]
+	i = 0
+	while i < 5:
+		if all_cards[i].value == all_cards[i+1].value == all_cards[i+2].value:
+			set = [all_cards[i], all_cards[i+1], all_cards[i+2]]
+			left = [j for j in all_cards if j not in set]
+			left_v = [j.value for j in left]
+			left_v.sort()
+			left_v.reverse()
+			kicks = [set[0].value, set[1].value, set[2].value, left_v[0], left_v[1]]
+			return True, kicks
+		i+=1
+	return False, kicks
+
+def is_straight(all_cards = [card, card, card, card, card, card, card]):
+	all_cards.sort(key = lambda card: card.value)
+	all_cards.reverse()
+	kicks = [0, 0, 0, 0, 0]
+	i = 0
+	while i < 3:
+		if all_cards[i].value == (all_cards[i+1].value + 1) == (all_cards[i+2].value + 2) == (all_cards[i+3].value + 3) == (all_cards[i+4].value + 4):
+			kicks = [all_cards[i].value, all_cards[i+1].value, all_cards[i+2].value, all_cards[i+3].value, all_cards[i+4].value]
+			return True, kicks
+		i+=1
+	return False, kicks
+
+def is_flush(all_cards = [card, card, card, card, card, card, card]):
+	all_cards.sort(key = lambda card: (card.id, -card.value))
+	kicks = [0, 0, 0, 0, 0]
+	i = 0
+	while i < 3:
+		if all_cards[i].id == all_cards[i+1].id == all_cards[i+2].id == all_cards[i+3].id == all_cards[i+4].id:
+			kicks = [all_cards[i].value, all_cards[i+1].value, all_cards[i+2].value, all_cards[i+3].value, all_cards[i+4].value]
+			kicks.sort()
+			kicks.reverse()
+			return True, kicks
+		i+=1
+	return False, kicks
+
+def is_full(all_cards = [card, card, card, card, card, card, card]):
+	all_cards.sort(key = lambda card: (card.value))
+	all_cards.reverse()
+	kicks = [0, 0, 0, 0, 0]
+	t, tk = is_3kind(all_cards)
+	set = [tk[0], tk[1], tk[2]]
+	if t:
+		left = [i for i in all_cards if i not in set]
+		p, p_v = is_pair_4(left)
+		if p:
+			kicks = [set[0], set[1], set[2], p_v, p_v]
+			return True, kicks
+	return False, kicks
+
+
+def is_quads(all_cards = [card, card, card, card, card, card, card]):
+	all_cards.sort(key = lambda card: (card.value))
+	all_cards.reverse()
+	kicks = [0, 0, 0, 0, 0]
+	i = 0
+	while i < 4:
+		if all_cards[i].value == all_cards[i+1].value == all_cards[i+2].value == all_cards[i+3].value:
+			q_v = all_cards[i].value
+			left = [j for j in all_cards if j.value != q_v]
+			left_v = [j.value for j in left]
+			kicks = [q_v, q_v, q_v, q_v, max(left_v)]
+			return True, kicks
+		i+=1
+	return False, kicks
+
+
+def is_sflush(all_cards = [card, card, card, card, card, card, card]):
+	f, kicks = is_flush(all_cards)
+	kicks.sort()
+	kicks.reverse()
+	if kicks[0] == (kicks[1]+1) == (kicks[2]+2) == (kicks[3]+3) == (kicks[4]+4):
+		return True, kicks
+	return False, [0, 0, 0, 0, 0]
+
+def hand (cards = [card, card], table = [card, card, card, card, card]):
+	all_cards = cards + table
+
+
+
+def winner (player_cards=[card, card], computer_player_cards=[card, card], table = [card, card, card, card, card]):
+	return 0
+
+
 
 
 def new_deal(player_1=player, computer_player_1 = computer_player, pot=0, blind=10, player_pot=0, computer_player_pot=0):
@@ -490,13 +646,9 @@ def new_deal(player_1=player, computer_player_1 = computer_player, pot=0, blind=
 
 
 		#increase counter
-player_1 = player()
-computer_player_1 = computer_player()
-counter = 0
-winner, pot = new_deal(player_1, computer_player_1)
-print(winner, str(pot))
+#player_1 = player()
+#computer_player_1 = computer_player()
+#counter = 0
+#winner, pot = new_deal(player_1, computer_player_1)
+#print(winner, str(pot))
 
-#if(bet == abs(difference)):
-#	print('Computer checks.')
-#else:
-#	print('Computer raises ' + str(abs(difference)) + '$.')	
